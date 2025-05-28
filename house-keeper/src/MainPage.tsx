@@ -10,15 +10,25 @@ export default function MainPage() {
         <button className="icon-button">🔒</button>
         <button className="icon-button">⚙️</button>
       </aside>
+
       <main className="main-content">
         <header className="header">
           <h1>Welcome Home <strong>Henrique</strong></h1>
         </header>
 
         <section className="dashboard">
-          <div className="card">🌞 28°C<br /><small>Clima local</small></div>
-          <div className="card">⚡ 18 Kwh<br /><small>Consumo de energia</small></div>
-          <div className="card">📅 24 de Janeiro<br /><small>Agenda de hoje</small></div>
+          <div className="card">
+            <h2>Clima Local</h2>
+            <p>28°C</p>
+          </div>
+          <div className="card">
+            <h2>Consumo de Energia</h2>
+            <p>18 Kwh</p>
+          </div>
+          <div className="card">
+            <h2>Agenda de Hoje</h2>
+            <p>24 de Janeiro</p>
+          </div>
         </section>
 
         <section className="tasks">
@@ -29,3 +39,4 @@ export default function MainPage() {
     </div>
   );
 }
+
