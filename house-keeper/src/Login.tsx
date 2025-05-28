@@ -20,7 +20,7 @@ export default function Login() {
     console.log("Dados enviados:", data);
 
     if (data.usuario === "Admin" && data.senha === "1234") {
-      navigate('/main');
+      navigate('/home');
     } else {
       alert("Usuário ou senha inválidos");
     }
@@ -57,18 +57,24 @@ export default function Login() {
 
         <button type="submit">Entrar</button>
 
-        <div className="register-container">
-          <button type="button" 
-          className="register-button" 
-          onClick={() => navigate('/register')}>
+        <div className="signup-section">
+          <button 
+            type="button" 
+            className="signup-button" 
+            onClick={() => navigate('/register')}
+          >
             Cadastre-se
-            </button>
-            <p className="register-link-text">
-              Ou clique 
-              <span onClick={() => navigate('/register')}
-                >aqui</span> para se cadastrar
-                </p>
-              </div>
+          </button>
+          <p className="signup-text">
+            Ou clique 
+            <span 
+              className="signup-link"
+              onClick={() => navigate('/register')}
+            >
+              aqui
+            </span> para se cadastrar
+          </p>
+        </div>
       </form>
     </div>
   );

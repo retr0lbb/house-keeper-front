@@ -1,15 +1,18 @@
 import "./Home.css";
+import { FaHome, FaCamera, FaLightbulb, FaLock, FaCog } from 'react-icons/fa';
+
 
 export default function MainPage() {
   return (
     <div className="main-container">
       <aside className="sidebar">
-        <button className="icon-button">🏠</button>
-        <button className="icon-button">📷</button>
-        <button className="icon-button">💡</button>
-        <button className="icon-button">🔒</button>
-        <button className="icon-button">⚙️</button>
+        <button className="icon-button"><FaHome /></button>
+         <button className="icon-button"><FaCamera /></button>
+        <button className="icon-button"><FaLightbulb /></button>
+        <button className="icon-button"><FaLock /></button>
+        <button className="icon-button"><FaCog /></button>
       </aside>
+
 
       <main className="main-content">
         <header className="header">
