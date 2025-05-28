@@ -1,5 +1,5 @@
 import { useForm } from 'react-hook-form';
-import { useNavigate } from 'react-router-dom'; // <-- IMPORTANTE!
+import { useNavigate } from 'react-router-dom';
 import './Login.css';
 
 type FormData = {
@@ -8,7 +8,7 @@ type FormData = {
 };
 
 export default function Login() {
-  const navigate = useNavigate(); // <-- INICIALIZA O HOOK
+  const navigate = useNavigate();
 
   const {
     register,
@@ -19,10 +19,8 @@ export default function Login() {
   const onSubmit = (data: FormData) => {
     console.log("Dados enviados:", data);
 
-    // Se quiser validar usuário/senha aqui, pode.
-    // Exemplo simples:
-    if (data.usuario === "admin" && data.senha === "1234") {
-      navigate('/main'); // <-- REDIRECIONA
+    if (data.usuario === "Admin" && data.senha === "1234") {
+      navigate('/main');
     } else {
       alert("Usuário ou senha inválidos");
     }
@@ -30,6 +28,8 @@ export default function Login() {
 
   return (
     <div className="login-container">
+      <div className="login-image" />
+
       <form className="login-form" onSubmit={handleSubmit(onSubmit)}>
         <h1 className="login-title">House Keeper</h1>
 
@@ -56,6 +56,19 @@ export default function Login() {
         )}
 
         <button type="submit">Entrar</button>
+
+        <div className="register-container">
+          <button type="button" 
+          className="register-button" 
+          onClick={() => navigate('/register')}>
+            Cadastre-se
+            </button>
+            <p className="register-link-text">
+              Ou clique 
+              <span onClick={() => navigate('/register')}
+                >aqui</span> para se cadastrar
+                </p>
+              </div>
       </form>
     </div>
   );
