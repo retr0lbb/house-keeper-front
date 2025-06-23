@@ -1,86 +1,151 @@
 import { useState, useEffect } from 'react';
 
 interface Device {
-  id: number;
-  nome: string;
+  id: string;
+  deviceSlug: string;
+  deviceSerial: string;
+  roomId: string | null;
 }
+
+interface UpsertDeviceDto {
+  deviceSlug: string;
+  deviceSerial: string;
+  roomId: string | null;
+}
+
+const API_URL = 'http://localhost:8080/devices';
 
 export default function DispositivosPage() {
   const [devices, setDevices] = useState<Device[]>([]);
-  const [newDeviceName, setNewDeviceName] = useState('');
+  const [deviceSlug, setDeviceSlug] = useState('');
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
-  useEffect(() => {
-    const fetchDevices = async () => {
-      try {
-        const response = await fetch('http://localhost:8080/api/dispositivos');
-        if (!response.ok) {
-          throw new Error('Falha na comunicação com o backend. O servidor está no ar?');
-        }
-        const data: Device[] = await response.json();
-        setDevices(data);
-      } catch (err: any) {
-        setError(err.message);
-      } finally {
-        setLoading(false);
-      }
-    };
+  const [editingId, setEditingId] = useState<string | null>(null);
+  const [editText, setEditText] = useState('');
 
+  useEffect(() => {
     fetchDevices();
   }, []);
 
-  const handleAddDevice = (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!newDeviceName.trim()) {
-      alert('Por favor, digite um nome para o dispositivo.');
-      return;
+  const fetchDevices = async () => {
+    try {
+      setLoading(true);
+      const response = await fetch(API_URL); // GET para /devices
+      if (!response.ok) throw new Error('Falha ao buscar dispositivos do backend.');
+      const data: Device[] = await response.json();
+      setDevices(data);
+      setError(null);
+    } catch (err: any) {
+      setError(err.message);
+    } finally {
+      setLoading(false);
     }
-    const newDevice: Device = {
-      id: Date.now(),
-      nome: newDeviceName,
+  };
+
+  const handleAddDevice = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!deviceSlug.trim()) return;
+    const newDevice: UpsertDeviceDto = {
+      deviceSlug: deviceSlug,
+      deviceSerial: `serial-${Date.now()}`,
+      roomId: null,
     };
-    setDevices([...devices, newDevice]);
-    setNewDeviceName('');
+    try {
+      const response = await fetch(API_URL, { 
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(newDevice),
+      });
+      if (!response.ok) throw new Error('Falha ao criar o dispositivo.');
+      setDeviceSlug('');
+      fetchDevices();
+    } catch (err: any) {
+      setError(err.message);
+    }
   };
 
-  const handleDeleteDevice = (idParaExcluir: number) => {
-    const novaListaDeDevices = devices.filter(device => device.id !== idParaExcluir);
-    setDevices(novaListaDeDevices);
+  const handleDeleteDevice = async (id: string) => {
+    if (!window.confirm('Tem certeza?')) return;
+    try {
+      const response = await fetch(`${API_URL}/${id}`, { method: 'DELETE' });
+      if (!response.ok) throw new Error('Falha ao deletar o dispositivo.');
+      fetchDevices();
+    } catch (err: any) {
+      setError(err.message);
+    }
+  };
+  
+  const handleUpdateDevice = async (id: string) => {
+    const deviceToUpdate = devices.find(d => d.id === id);
+    if (!deviceToUpdate || !editText.trim()) return;
+    const updatedDevice: UpsertDeviceDto = {
+      deviceSlug: editText,
+      deviceSerial: deviceToUpdate.deviceSerial,
+      roomId: deviceToUpdate.roomId
+    };
+    try {
+        const response = await fetch(`${API_URL}/${id}`, {
+            method: 'PATCH',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(updatedDevice)
+        });
+        if(!response.ok) throw new Error('Falha ao atualizar o dispositivo.');
+        setEditingId(null);
+        setEditText('');
+        fetchDevices();
+    } catch (err: any) {
+        setError(err.message);
+    }
   };
 
-  if (loading) {
-    return <div><h1>Meus Dispositivos</h1><p>Carregando dispositivos...</p></div>;
-  }
+  const startEditing = (device: Device) => {
+    setEditingId(device.id);
+    setEditText(device.deviceSlug);
+  };
 
-  if (error) {
-    return <div><h1>Meus Dispositivos</h1><p style={{ color: 'red' }}>Erro: {error}</p></div>;
-  }
+  const cancelEditing = () => {
+    setEditingId(null);
+    setEditText('');
+  };
+
+  if (loading) return <div><h1>Meus Dispositivos</h1><p>Carregando...</p></div>;
+  if (error) return <div><h1>Meus Dispositivos</h1><p style={{ color: 'red' }}>Erro: {error}</p></div>;
 
   return (
     <div>
       <h1>Meus Dispositivos</h1>
-      <form onSubmit={handleAddDevice} className="add-device-form">
+      <form onSubmit={handleAddDevice}>
         <input
           type="text"
           placeholder="Nome do novo dispositivo"
-          value={newDeviceName}
-          onChange={(e) => setNewDeviceName(e.target.value)}
+          value={deviceSlug}
+          onChange={(e) => setDeviceSlug(e.target.value)}
         />
         <button type="submit">Adicionar Dispositivo</button>
       </form>
       <hr />
       <div className="device-list">
-        {devices.length === 0 ? (
-          <p>Nenhum dispositivo encontrado.</p>
-        ) : (
+        {devices.length === 0 ? (<p>Nenhum dispositivo encontrado.</p>) : (
           devices.map(device => (
             <div key={device.id} className="device-item">
-              <span>{device.nome}</span>
-              <div className="device-actions">
-                <button>Editar</button>
-                <button onClick={() => handleDeleteDevice(device.id)}>Excluir</button>
-              </div>
+              {editingId === device.id ? (
+                <>
+                  <input type="text" value={editText} onChange={(e) => setEditText(e.target.value)} />
+                  <div className="device-actions">
+                    <button onClick={() => handleUpdateDevice(device.id)}>Salvar</button>
+                    <button onClick={cancelEditing}>Cancelar</button>
+                  </div>
+                </>
+              ) : (
+                <>
+                  <span>{device.deviceSlug} (Serial: {device.deviceSerial})</span>
+                  <div className="device-actions">
+                    <button onClick={() => startEditing(device)}>Editar</button>
+                    <button onClick={() => handleDeleteDevice(device.id)}>Excluir</button>
+                  </div>
+                </>
+              )}
             </div>
           ))
         )}
