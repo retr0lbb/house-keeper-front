@@ -1,14 +1,18 @@
 import { useForm } from 'react-hook-form';
 import { useNavigate } from 'react-router-dom';
+import { useState } from 'react';
 import './Login.css';
 
 type FormData = {
   usuario: string;
   senha: string;
 };
+const API_LOGIN_URL = 'http://localhost:8080/login';
 
 export default function Login() {
   const navigate = useNavigate();
+  const [loginError, setLoginError] = useState<string | null>(null);
+  const [isLoading, setIsLoading] = useState(false);
 
   const {
     register,
@@ -16,13 +20,38 @@ export default function Login() {
     formState: { errors },
   } = useForm<FormData>();
 
-  const onSubmit = (data: FormData) => {
-    console.log("Dados enviados:", data);
+  const onSubmit = async (data: FormData) => {
+    setIsLoading(true);
+    setLoginError(null);
+    
+    const loginRequest = {
+        userName: data.usuario,
+        password: data.senha
+    };
 
-    if (data.usuario === "Admin" && data.senha === "1234") {
-      navigate('/home');
-    } else {
-      alert("Usuário ou senha inválidos");
+    try {
+        const response = await fetch(API_LOGIN_URL, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify(loginRequest)
+        });
+
+        const responseData = await response.json();
+
+        if (!response.ok) {
+            throw new Error(responseData.message || "Usuário ou senha inválidos");
+        }
+        
+        localStorage.setItem('jwt_token', responseData.acess_token);
+        
+        navigate('/home');
+
+    } catch (error: any) {
+        setLoginError(error.message);
+    } finally {
+        setIsLoading(false);
     }
   };
 
@@ -33,11 +62,11 @@ export default function Login() {
       <form className="login-form" onSubmit={handleSubmit(onSubmit)}>
         <h1 className="login-title">House Keeper</h1>
 
-        <label htmlFor="usuario">Usuário</label>
+        <label htmlFor="usuario">Usuário (Email)</label>
         <input
           id="usuario"
           type="text"
-          placeholder="Digite seu usuário"
+          placeholder="Digite seu usuário ou email"
           {...register('usuario', { required: "Usuário é obrigatório" })}
         />
         {errors.usuario && (
@@ -54,8 +83,14 @@ export default function Login() {
         {errors.senha && (
           <span className="error">{errors.senha.message}</span>
         )}
+        
+        {loginError && (
+          <span className="error">{loginError}</span>
+        )}
 
-        <button type="submit">Entrar</button>
+        <button type="submit" disabled={isLoading}>
+          {isLoading ? 'Entrando...' : 'Entrar'}
+        </button>
 
         <div className="signup-section">
           <button 
