@@ -1,12 +1,12 @@
 import { useState, useEffect } from 'react';
 
+
 interface Device {
   id: string;
   deviceSlug: string;
   deviceSerial: string;
   roomId: string | null;
 }
-
 interface UpsertDeviceDto {
   deviceSlug: string;
   deviceSerial: string;
@@ -16,14 +16,16 @@ interface UpsertDeviceDto {
 const API_URL = 'http://localhost:8080/devices';
 
 export default function DispositivosPage() {
+
   const [devices, setDevices] = useState<Device[]>([]);
   const [deviceSlug, setDeviceSlug] = useState('');
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-
   const [editingId, setEditingId] = useState<string | null>(null);
   const [editText, setEditText] = useState('');
 
+  const [currentPage, setCurrentPage] = useState(1);
+  const [itemsPerPage] = useState(5);
   useEffect(() => {
     fetchDevices();
   }, []);
@@ -31,7 +33,7 @@ export default function DispositivosPage() {
   const fetchDevices = async () => {
     try {
       setLoading(true);
-      const response = await fetch(API_URL); // GET para /devices
+      const response = await fetch(API_URL);
       if (!response.ok) throw new Error('Falha ao buscar dispositivos do backend.');
       const data: Device[] = await response.json();
       setDevices(data);
@@ -52,7 +54,7 @@ export default function DispositivosPage() {
       roomId: null,
     };
     try {
-      const response = await fetch(API_URL, { 
+      const response = await fetch(API_URL, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(newDevice),
@@ -109,6 +111,17 @@ export default function DispositivosPage() {
     setEditText('');
   };
 
+  const indexOfLastItem = currentPage * itemsPerPage;
+  const indexOfFirstItem = indexOfLastItem - itemsPerPage;
+  const currentItems = devices.slice(indexOfFirstItem, indexOfLastItem);
+  const totalPages = Math.ceil(devices.length / itemsPerPage);
+
+  const paginate = (pageNumber: number) => {
+    if (pageNumber > 0 && pageNumber <= totalPages) {
+      setCurrentPage(pageNumber);
+    }
+  };
+
   if (loading) return <div><h1>Meus Dispositivos</h1><p>Carregando...</p></div>;
   if (error) return <div><h1>Meus Dispositivos</h1><p style={{ color: 'red' }}>Erro: {error}</p></div>;
 
@@ -127,7 +140,7 @@ export default function DispositivosPage() {
       <hr />
       <div className="device-list">
         {devices.length === 0 ? (<p>Nenhum dispositivo encontrado.</p>) : (
-          devices.map(device => (
+          currentItems.map(device => (
             <div key={device.id} className="device-item">
               {editingId === device.id ? (
                 <>
@@ -150,6 +163,20 @@ export default function DispositivosPage() {
           ))
         )}
       </div>
+
+      {totalPages > 1 && (
+        <div className="pagination">
+          <button onClick={() => paginate(currentPage - 1)} disabled={currentPage === 1}>
+            Anterior
+          </button>
+          <span>
+            Página {currentPage} de {totalPages}
+          </span>
+          <button onClick={() => paginate(currentPage + 1)} disabled={currentPage === totalPages}>
+            Próximo
+          </button>
+        </div>
+      )}
     </div>
   );
 }
